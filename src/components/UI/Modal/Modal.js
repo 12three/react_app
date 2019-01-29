@@ -1,12 +1,14 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import Backdrop from '../Backdrop/Backdrop';
 
-import classes from './Modal.css'
+import classes from './Modal.css';
 
 export default class Modal extends Component {
-
     shouldComponentUpdate(nextProps, nextStates) {
-        return nextProps.show !== this.props.show;
+        return (
+            nextProps.show !== this.props.show ||
+            nextProps.children !== this.props.children
+        );
     }
 
     render() {
@@ -14,16 +16,20 @@ export default class Modal extends Component {
             <>
                 <Backdrop
                     show={this.props.show}
-                    clicked={this.props.modalClosed} />
+                    clicked={this.props.modalClosed}
+                />
                 <div
                     style={{
-                        transform: this.props.show ? 'translateY(0)' : 'translateY(-100vh)',
+                        transform: this.props.show
+                            ? 'translateY(0)'
+                            : 'translateY(-100vh)',
                         opacity: this.props.show ? '1' : '0',
                     }}
-                    className={classes.Modal}>
+                    className={classes.Modal}
+                >
                     {this.props.children}
                 </div>
             </>
-        )
+        );
     }
 }

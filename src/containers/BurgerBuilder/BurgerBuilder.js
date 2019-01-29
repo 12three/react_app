@@ -5,6 +5,8 @@ import Burger from '../../components/Burger/Burger';
 import BurgerControls from '../../components/BurgerControls/BurgerControls';
 import Modal from '../../components/UI/Modal/Modal';
 import OrderSummary from '../../components/OrderSummary/OrderSummary';
+import Spinner from '../../components/UI/Spinner/Spinner';
+import withErrorHandler from '../../hoc/withErrorHandler/withErrorHandler';
 
 class BurderBuilder extends Component {
     state = {
@@ -29,6 +31,7 @@ class BurderBuilder extends Component {
         totalPrice: 0,
         purchasable: false,
         purchasing: false,
+        loading: false,
     };
 
     updatePurchaseState(ingredients) {
@@ -95,8 +98,18 @@ class BurderBuilder extends Component {
     };
 
     purchaseContinueHandler = () => {
+        this.setState({ loading: true })
+        const ingredients = Object.keys(this.state.ingredients).reduce(
+            (acc, key) => {
+                acc[key] = this.state.ingredients[key].amount;
+
+                return acc;
+            },
+            {},
+        );
+
         const order = {
-            ingredients: this.state.ingredients,
+            ingredients,
             price: this.state.totalPrice,
             author: {
                 name: 'Andrey Zakharenko',
@@ -106,8 +119,22 @@ class BurderBuilder extends Component {
             deliveryMethod: 'fastest',
         };
 
-        axios.post('orders.json');
-    }
+
+        axios
+            .post('orders.json', order)
+            .then(response => {
+                this.setState({
+                    loading: false,
+                    purchasing: false,
+                });
+            })
+            .then(error => {
+                this.setState({
+                    loading: false,
+                    purchasing: false,
+                });
+            });
+    };
 
     render() {
         const disabledInfo = {
@@ -118,18 +145,25 @@ class BurderBuilder extends Component {
             disabledInfo[key] = disabledInfo[key].amount <= 0;
         }
 
+        let orderSummary = (
+            <OrderSummary
+                ingredients={this.state.ingredients}
+                price={this.state.totalPrice}
+                purchaseClosed={this.purchaseClosedHandler}
+                purchaseContinue={this.purchaseContinueHandler}
+            />
+        );
+        if (this.state.loading) {
+            orderSummary = <Spinner />;
+        }
+
         return (
             <>
                 <Modal
                     show={this.state.purchasing}
                     modalClosed={this.purchaseClosedHandler}
                 >
-                    <OrderSummary
-                        ingredients={this.state.ingredients}
-                        price={this.state.totalPrice}
-                        purchaseClosed={this.purchaseClosedHandler}
-                        purchaseContinue={this.purchaseContinueHandler}
-                    />
+                    {orderSummary}
                 </Modal>
                 <Burger ingredients={this.state.ingredients} />
                 <BurgerControls
@@ -147,4 +181,4 @@ class BurderBuilder extends Component {
     }
 }
 
-export default BurderBuilder;
+export default withErrorHandler(BurderBuilder, axios);
