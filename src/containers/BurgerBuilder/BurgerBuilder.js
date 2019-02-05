@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import axios from '../../axios-orders';
 
 import Burger from '../../components/Burger/Burger';
 import BurgerControls from '../../components/BurgerControls/BurgerControls';
@@ -98,7 +97,6 @@ class BurderBuilder extends Component {
     };
 
     purchaseContinueHandler = () => {
-        this.setState({ loading: true })
         const ingredients = Object.keys(this.state.ingredients).reduce(
             (acc, key) => {
                 acc[key] = this.state.ingredients[key].amount;
@@ -108,32 +106,17 @@ class BurderBuilder extends Component {
             {},
         );
 
-        const order = {
-            ingredients,
-            price: this.state.totalPrice,
-            author: {
-                name: 'Andrey Zakharenko',
-                zipCode: '41352',
-                country: 'Ukraine',
-            },
-            deliveryMethod: 'fastest',
-        };
-
-
-        axios
-            .post('orders.json', order)
-            .then(response => {
-                this.setState({
-                    loading: false,
-                    purchasing: false,
-                });
+        const queryString = Object.keys(ingredients)
+            .map((key) => {
+                return `${encodeURIComponent(key)}=${encodeURIComponent(ingredients[key])}`
             })
-            .then(error => {
-                this.setState({
-                    loading: false,
-                    purchasing: false,
-                });
-            });
+            .concat([`price=${this.state.totalPrice}`])
+            .join('&')
+
+        this.props.history.push({
+            pathname: '/checkout',
+            search: `?${queryString}`,
+        })
     };
 
     render() {
@@ -181,4 +164,4 @@ class BurderBuilder extends Component {
     }
 }
 
-export default withErrorHandler(BurderBuilder, axios);
+export default BurderBuilder;
