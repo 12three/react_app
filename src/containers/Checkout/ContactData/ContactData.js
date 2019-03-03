@@ -1,10 +1,16 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 
 import axios from '../../../axios-orders';
 import Button from '../../../components/UI/Button/Button';
 import Spinner from '../../../components/UI/Spinner/Spinner';
 import Input from '../../../components/UI/Input/Input';
 import classes from './ContactData.css';
+
+const ERROR_MESSAGES = {
+    empty: 'Please enter a valid value.',
+    required: 'This field is required.',
+}
 
 class ContactData extends Component {
     state = {
@@ -16,6 +22,11 @@ class ContactData extends Component {
                     placeholder: 'Your Name',
                 },
                 value: '',
+                validation: {
+                    required: true,
+                },
+                valid: null,
+                errorMessage: null,
             },
             nastreetme: {
                 elementType: 'input',
@@ -24,6 +35,8 @@ class ContactData extends Component {
                     placeholder: 'Street',
                 },
                 value: '',
+                valid: null,
+                errorMessage: null,
             },
             zipCode: {
                 elementType: 'input',
@@ -32,6 +45,8 @@ class ContactData extends Component {
                     placeholder: 'ZIP Code',
                 },
                 value: '',
+                valid: null,
+                errorMessage: null,
             },
             zipCode: {
                 elementType: 'input',
@@ -40,6 +55,8 @@ class ContactData extends Component {
                     placeholder: 'ZIP Code',
                 },
                 value: '',
+                valid: null,
+                errorMessage: null,
             },
             country: {
                 elementType: 'input',
@@ -48,6 +65,8 @@ class ContactData extends Component {
                     placeholder: 'Country',
                 },
                 value: '',
+                valid: null,
+                errorMessage: null,
             },
             email: {
                 elementType: 'input',
@@ -56,6 +75,8 @@ class ContactData extends Component {
                     placeholder: 'Your E-Mail',
                 },
                 value: '',
+                valid: null,
+                errorMessage: null,
             },
             method: {
                 elementType: 'select',
@@ -69,7 +90,9 @@ class ContactData extends Component {
                         },
                     ]
                 },
-                value: '',
+                value: 'cheapest',
+                valid: null,
+                errorMessage: null,
             },
         },
         loading: false,
@@ -77,26 +100,107 @@ class ContactData extends Component {
 
     orderHandler = (e) => {
         e.preventDefault();
-        this.setState({ loading: true });
+        // this.setState({ loading: true });
+        const orderData = Object.keys(this.state.orderForm).reduce((acc, key) => {
+            acc[key] = this.state.orderForm[key].value;
+
+            return acc;
+        }, {})
+
         const order = {
-            ingredients: this.props.ingredients,
+            ingredients: this.props.ings,
             price: this.props.price,
+            orderData,
         };
 
+        this.checkFormValidaty()
+            .then(isValidForm => {
+                if (isValidForm) {
+                    return axios
+                        .post('orders.json', order)
+                        .then(response => {
+                            this.setState({
+                                loading: false,
+                            });
+                            this.props.history.push('/');
+                        })
+                        .catch(error => {
+                            this.setState({
+                                loading: false,
+                            });
+                        });
+                }
 
-        axios
-            .post('orders.json', order)
-            .then(response => {
                 this.setState({
                     loading: false,
                 });
-                this.props.history.push('/');
             })
-            .catch(error => {
-                this.setState({
-                    loading: false,
-                });
+    }
+
+    checkFieldValidaty = (value, rules) => {
+        let result = {
+            isValid: true,
+            errorMessage: null,
+        };
+
+        if (rules.required) {
+            const isValid = value !== '';
+
+            result.isValid = isValid;
+            result.errorMessage = isValid ? null : ERROR_MESSAGES.required;
+        }
+
+        return result
+    }
+
+    checkFormValidaty() {
+        return new Promise((resolve, reject) => {
+            let isValidForm = true;
+            const updatedOrderForm = {
+                ...this.state.orderForm,
+            }
+
+            Object.keys(updatedOrderForm).forEach(key => {
+                const updatedFormElement = { ...updatedOrderForm[key] }
+
+                if (!updatedFormElement.valid && typeof updatedFormElement.valid === "boolean") {
+                    isValidForm = false;
+                }
+                if (updatedFormElement.validation && updatedFormElement.valid === null) {
+                    updatedFormElement.valid = false;
+                    updatedFormElement.errorMessage = ERROR_MESSAGES.empty;
+                    isValidForm = false;
+                }
+
+                updatedOrderForm[key] = updatedFormElement;
+            })
+            this.setState({
+                orderForm: updatedOrderForm,
             });
+
+            resolve(isValidForm);
+        })
+    }
+
+    inputChangedHandler = (e, key) => {
+        const updatedOrderForm = {
+            ...this.state.orderForm,
+        };
+        const updatedFormElement = { ...updatedOrderForm[key] };
+
+        updatedFormElement.value = e.target.value;
+        updatedOrderForm[key] = updatedFormElement;
+        if (updatedOrderForm[key].validation) {
+            const fieldValidResult = this.checkFieldValidaty(
+                e.target.value,
+                updatedOrderForm[key].validation)
+
+            updatedOrderForm[key].valid = fieldValidResult.isValid;
+            updatedOrderForm[key].errorMessage = fieldValidResult.errorMessage;
+        }
+        this.setState({
+            orderForm: updatedOrderForm,
+        });
     }
 
     render() {
@@ -104,12 +208,18 @@ class ContactData extends Component {
             const type = this.state.orderForm[key].elementType;
             const config = this.state.orderForm[key].elementConfig;
             const value = this.state.orderForm[key].value;
+            const invalide = this.state.orderForm[key].valid !== null
+                && !this.state.orderForm[key].valid;
+            const errorMessage = this.state.orderForm[key].errorMessage;
 
             return <Input
                 key={key}
                 inputType={type}
                 elementConfig={config}
-                value={value} />
+                invalid={invalide}
+                value={value}
+                errorMessage={errorMessage}
+                changed={(e) => this.inputChangedHandler(e, key)}/>
         })
         let form = (
             <form>
@@ -132,4 +242,11 @@ class ContactData extends Component {
     }
 }
 
-export default ContactData;
+const mapStateToProps = state => {
+    return {
+        ings: state.ingredients,
+        price: state.totalPrice,
+    }
+}
+
+export default connect(mapStateToProps)(ContactData);
