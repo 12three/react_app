@@ -4,6 +4,7 @@ import classes from './Order.css';
 
 const Order = (props) => {
     const price = Number.parseFloat(props.price).toFixed(2);
+    console.log(1, props.ingredients);
     const ingredients = Object.keys(props.ingredients).map(ingName => {
         const amount = props.ingredients[ingName];
 

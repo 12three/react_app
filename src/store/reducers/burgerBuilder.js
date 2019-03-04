@@ -1,4 +1,5 @@
-import * as actionTypes from './actions';
+import * as actionTypes from '../actions/actionTypes';
+import { updateState } from '../utility';
 
 const initialState = {
     ingredients: {
@@ -23,10 +24,11 @@ const initialState = {
 }
 
 const reducer = (state = initialState, action) => {
+    const updateStore = updateState(state);
+
     switch (action.type) {
         case actionTypes.ADD_INGREDIENT:
-            return {
-                ...state,
+            return updateStore({
                 ingredients: {
                     ...state.ingredients,
                     [action.ingredientName]: {
@@ -35,10 +37,9 @@ const reducer = (state = initialState, action) => {
                     }
                 },
                 totalPrice: state.totalPrice + state.ingredients[action.ingredientName].price,
-            }
+            })
         case actionTypes.REMOVE_INGREDIENT:
-            return {
-                ...state,
+            return updateStore({
                 ingredients: {
                     ...state.ingredients,
                     [action.ingredientName]: {
@@ -47,12 +48,22 @@ const reducer = (state = initialState, action) => {
                     }
                 },
                 totalPrice: state.totalPrice - state.ingredients[action.ingredientName].price,
+            })
+        case actionTypes.RESET_INGREDIENT:
+            const emptyIngredients = { ...state.ingredients };
+            for (const key in emptyIngredients) {
+                if (emptyIngredients.hasOwnProperty(key)) {
+                    emptyIngredients[key].amount = 0;
+                }
             }
+
+            return updateStore({
+                ingredients: emptyIngredients,
+                totalPrice: 0,
+            })
         default:
             return state;
     }
-
-    return state;
 }
 
 export default reducer;

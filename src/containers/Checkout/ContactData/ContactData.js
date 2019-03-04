@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
-import axios from '../../../axios-orders';
 import Button from '../../../components/UI/Button/Button';
 import Spinner from '../../../components/UI/Spinner/Spinner';
 import Input from '../../../components/UI/Input/Input';
 import classes from './ContactData.css';
+import * as actions from '../../../store/actions/index';
+
 
 const ERROR_MESSAGES = {
     empty: 'Please enter a valid value.',
@@ -33,16 +34,6 @@ class ContactData extends Component {
                 elementConfig: {
                     type: 'text',
                     placeholder: 'Street',
-                },
-                value: '',
-                valid: null,
-                errorMessage: null,
-            },
-            zipCode: {
-                elementType: 'input',
-                elementConfig: {
-                    type: 'text',
-                    placeholder: 'ZIP Code',
                 },
                 value: '',
                 valid: null,
@@ -95,7 +86,6 @@ class ContactData extends Component {
                 errorMessage: null,
             },
         },
-        loading: false,
     };
 
     orderHandler = (e) => {
@@ -107,8 +97,15 @@ class ContactData extends Component {
             return acc;
         }, {})
 
+        const convertedIngs = Object.keys(this.props.ings).reduce((acc, key) => {
+            return {
+                ...acc,
+                [key]: this.props.ings[key].amount,
+            }
+        }, {})
+
         const order = {
-            ingredients: this.props.ings,
+            ingredients: convertedIngs,
             price: this.props.price,
             orderData,
         };
@@ -116,24 +113,8 @@ class ContactData extends Component {
         this.checkFormValidaty()
             .then(isValidForm => {
                 if (isValidForm) {
-                    return axios
-                        .post('orders.json', order)
-                        .then(response => {
-                            this.setState({
-                                loading: false,
-                            });
-                            this.props.history.push('/');
-                        })
-                        .catch(error => {
-                            this.setState({
-                                loading: false,
-                            });
-                        });
+                    this.props.onOrderBurger(order);
                 }
-
-                this.setState({
-                    loading: false,
-                });
             })
     }
 
@@ -229,7 +210,7 @@ class ContactData extends Component {
                     clicked={this.orderHandler}>ORDER</Button>
             </form>
         );
-        if (this.state.loading) {
+        if (this.props.loading) {
             form = <Spinner show="true"/>
         }
 
@@ -244,9 +225,16 @@ class ContactData extends Component {
 
 const mapStateToProps = state => {
     return {
-        ings: state.ingredients,
-        price: state.totalPrice,
+        ings: state.burgerBuilder.ingredients,
+        price: state.burgerBuilder.totalPrice,
+        loading: state.orders.loading,
     }
 }
 
-export default connect(mapStateToProps)(ContactData);
+const mapDispatchToProps = dispatch => {
+    return {
+        onOrderBurger: (orderData) => dispatch(actions.purchaseBurger(orderData)),
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(ContactData);
