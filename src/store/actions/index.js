@@ -8,3 +8,8 @@ export {
     purchaseInit,
     fetchOrders,
 } from './order';
+export {
+    auth,
+    logout,
+    setAuthRedirect,
+} from './auth';
