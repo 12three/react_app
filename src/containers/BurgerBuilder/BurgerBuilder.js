@@ -8,7 +8,7 @@ import OrderSummary from '../../components/OrderSummary/OrderSummary';
 import Spinner from '../../components/UI/Spinner/Spinner';
 import * as actions from '../../store/actions/index';
 
-class BurderBuilder extends Component {
+export class BurgerBuilder extends Component {
     state = {
         purchasing: false,
         loading: false,
@@ -77,7 +77,7 @@ class BurderBuilder extends Component {
                     ingredientRemoved={this.props.onIngredientRemoved}
                     disabledInfo={disabledInfo}
                     price={this.props.price}
-                    purchasable={this.updatePurchaseState(this.props.ings)}
+                    purchasable={() => this.updatePurchaseState(this.props.ings)}
                     ordered={() => this.purchaseHandler()}
                     isAuth={this.props.isAuth}
                 />
@@ -102,4 +102,4 @@ const mapDispatchToProps = dispatch => {
     }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(BurderBuilder);
+export default connect(mapStateToProps, mapDispatchToProps)(BurgerBuilder);
