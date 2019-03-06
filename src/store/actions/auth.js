@@ -61,10 +61,13 @@ export const auth = (email, password, isSignup) => {
             .then( ({data}) => {
                 const expirationTime = new Date(new Date().getTime() + data.expiresIn * 1000);
 
-                localStorage.setItem('token', data.expiresIn);
+                localStorage.setItem('token', data.idToken);
                 localStorage.setItem('expirationTime', expirationTime);
-                localStorage.setItem('userId', data.localIn);
-                dispatch(authSuccess(data));
+                localStorage.setItem('userId', data.localId);
+                dispatch(authSuccess({
+                    idToken: data.idToken,
+                    userId: data.localId,
+                }));
                 dispatch(checkOutTimeout(data.expiresIn));
             })
             .catch(err => dispatch(authFail(err.response.data.error)))
@@ -91,7 +94,10 @@ export const checkAuthState = () => {
             } else {
                 const userId = localStorage.getItem('userId');
 
-                dispatch(authSuccess({ token, userId }));
+                dispatch(authSuccess({
+                    idToken: token,
+                    userId
+                }));
                 dispatch(checkOutTimeout((expirationTime.getTime() - new Date().getTime()) / 1000));
             }
         }
